@@ -15,6 +15,24 @@ with app.app_context():
     seed_db()
 
 
+def get_current_user():
+    user_id = session.get("user_id")
+    if user_id is None:
+        return None
+    conn = get_db()
+    try:
+        return conn.execute(
+            "SELECT id, name, email FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+    finally:
+        conn.close()
+
+
+@app.context_processor
+def inject_current_user():
+    return {"current_user": get_current_user()}
+
+
 # ------------------------------------------------------------------ #
 # Routes                                                              #
 # ------------------------------------------------------------------ #
@@ -26,6 +44,9 @@ def landing():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    if session.get("user_id"):
+        return redirect(url_for("landing"))
+
     if request.method == "GET":
         return render_template("register.html", form_data={})
 
@@ -81,6 +102,9 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if session.get("user_id"):
+        return redirect(url_for("landing"))
+
     if request.method == "GET":
         return render_template("login.html")
 
@@ -110,7 +134,7 @@ def login():
 
     session.clear()
     session["user_id"] = user["id"]
-    return redirect(url_for("profile"))
+    return redirect(url_for("landing"))
 
 
 @app.route("/logout")
