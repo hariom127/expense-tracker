@@ -1,4 +1,7 @@
-from flask import Flask, render_template
+import sqlite3
+
+from flask import Flask, render_template, request, redirect, url_for
+from werkzeug.security import generate_password_hash
 
 from database.db import get_db, init_db, seed_db
 
@@ -18,9 +21,59 @@ def landing():
     return render_template("landing.html")
 
 
-@app.route("/register")
+@app.route("/register", methods=["GET", "POST"])
 def register():
-    return render_template("register.html")
+    if request.method == "GET":
+        return render_template("register.html", form_data={})
+
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+    form_data = {"name": name, "email": email}
+
+    if not name:
+        error = "Full name is required"
+    elif not email:
+        error = "Email address is required"
+    elif not password:
+        error = "Password is required"
+    elif len(password) < 8:
+        error = "Password must be at least 8 characters long"
+    else:
+        error = None
+
+    if error:
+        return render_template("register.html", error=error, form_data=form_data)
+
+    conn = get_db()
+    try:
+        existing = conn.execute(
+            "SELECT id FROM users WHERE email = ?", (email,)
+        ).fetchone()
+        if existing:
+            return render_template(
+                "register.html",
+                error="An account with this email already exists",
+                form_data=form_data,
+            )
+
+        password_hash = generate_password_hash(password)
+        try:
+            conn.execute(
+                "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+                (name, email, password_hash),
+            )
+            conn.commit()
+        except sqlite3.IntegrityError:
+            return render_template(
+                "register.html",
+                error="An account with this email already exists",
+                form_data=form_data,
+            )
+    finally:
+        conn.close()
+
+    return redirect(url_for("login"))
 
 
 @app.route("/login")
