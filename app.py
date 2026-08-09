@@ -153,14 +153,45 @@ def terms_and_conditions():
     return render_template("terms_and_conditions.html")
 
 
+@app.route("/profile")
+def profile():
+    user_id = session.get("user_id")
+    if user_id is None:
+        return redirect(url_for("login"))
+
+    conn = get_db()
+    try:
+        user = conn.execute(
+            "SELECT id, name, email, created_at FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+
+        summary = conn.execute(
+            "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count "
+            "FROM expenses WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+
+        recent_expenses = conn.execute(
+            "SELECT amount, category, date, description FROM expenses "
+            "WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT 10",
+            (user_id,),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    return render_template(
+        "profile.html",
+        user=user,
+        total_spent=summary["total"],
+        expense_count=summary["count"],
+        recent_expenses=recent_expenses,
+    )
+
+
 # ------------------------------------------------------------------ #
 # Placeholder routes — students will implement these                  #
 # ------------------------------------------------------------------ #
-
-
-@app.route("/profile")
-def profile():
-    return "Profile page — coming in Step 4"
 
 
 @app.route("/expenses/add")

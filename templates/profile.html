@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Your Profile — Spendly{% endblock %}
+
+{% block content %}
+
+<section class="legal-section">
+
+    <div class="auth-header">
+        <h1 class="auth-title">Your Profile</h1>
+        <p class="auth-subtitle">Account details and expense overview</p>
+    </div>
+
+    <div class="auth-card profile-card">
+        <div class="profile-field">
+            <span class="profile-field-label">Name</span>
+            <span class="profile-field-value">{{ user['name'] }}</span>
+        </div>
+        <div class="profile-field">
+            <span class="profile-field-label">Email</span>
+            <span class="profile-field-value">{{ user['email'] }}</span>
+        </div>
+        <div class="profile-field">
+            <span class="profile-field-label">Member since</span>
+            <span class="profile-field-value">{{ user['created_at'][:10] }}</span>
+        </div>
+    </div>
+
+    <div class="profile-stats">
+        <div class="profile-stat">
+            <span class="profile-stat-label">Total spent</span>
+            <span class="profile-stat-value">₹{{ "%.2f"|format(total_spent) }}</span>
+        </div>
+        <div class="profile-stat">
+            <span class="profile-stat-label">Expenses logged</span>
+            <span class="profile-stat-value">{{ expense_count }}</span>
+        </div>
+    </div>
+
+    <div class="expense-list">
+        <h2 class="expense-list-title">Recent expenses</h2>
+        {% if recent_expenses %}
+            {% for expense in recent_expenses %}
+            <div class="expense-row">
+                <div class="expense-row-main">
+                    <span class="expense-category">{{ expense['category'] }}</span>
+                    <span class="expense-description">{{ expense['description'] or 'No description' }}</span>
+                </div>
+                <div class="expense-row-meta">
+                    <span class="expense-date">{{ expense['date'] }}</span>
+                    <span class="expense-amount">₹{{ "%.2f"|format(expense['amount']) }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="expense-empty">No expenses logged yet.</p>
+        {% endif %}
+    </div>
+
+</section>
+
+{% endblock %}
