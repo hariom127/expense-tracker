@@ -22,7 +22,7 @@
         </div>
         <div class="profile-field">
             <span class="profile-field-label">Member since</span>
-            <span class="profile-field-value">{{ user['created_at'][:10] }}</span>
+            <span class="profile-field-value">{{ user['member_since'] }}</span>
         </div>
     </div>
 
@@ -32,10 +32,48 @@
             <span class="profile-stat-value">₹{{ "%.2f"|format(total_spent) }}</span>
         </div>
         <div class="profile-stat">
-            <span class="profile-stat-label">Expenses logged</span>
+            <span class="profile-stat-label">Monthly budget</span>
+            <span class="profile-stat-value">₹{{ "%.2f"|format(budget) }}</span>
+        </div>
+        <div class="profile-stat">
+            <span class="profile-stat-label">Total transactions</span>
             <span class="profile-stat-value">{{ expense_count }}</span>
         </div>
+        <div class="profile-stat">
+            <span class="profile-stat-label">Top category</span>
+            <span class="profile-stat-value">{{ top_category }}</span>
+        </div>
     </div>
+
+    {% if category_breakdown %}
+    <div class="spending-chart">
+        <h2 class="spending-chart-title">Spending by category</h2>
+        <div class="chart-bars">
+            {% set icons = {
+                'Food': '🍔',
+                'Transport': '🚗',
+                'Bills': '💳',
+                'Health': '🏥',
+                'Entertainment': '🎬',
+                'Shopping': '🛍️',
+                'Other': '📌'
+            } %}
+            {% for item in category_breakdown %}
+            <div class="chart-row">
+                <div class="chart-label">
+                    <span class="category-icon">{{ icons.get(item['name'], '•') }}</span>
+                    <span class="category-name">{{ item['name'] }}</span>
+                </div>
+                <div class="chart-track">
+                    <div class="chart-bar" style="width: {{ item['pct'] }}%;"></div>
+                </div>
+                <span class="chart-value">₹{{ "%.2f"|format(item['amount']) }}</span>
+                <span class="chart-pct">{{ item['pct'] }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
     <div class="expense-list">
         <h2 class="expense-list-title">Recent expenses</h2>

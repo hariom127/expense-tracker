@@ -4,11 +4,18 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from database.db import get_db, init_db, seed_db
+from database.queries import (
+    get_category_breakdown,
+    get_recent_transactions,
+    get_summary_stats,
+    get_user_by_id,
+)
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key-change-in-production"
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["DEFAULT_MONTHLY_BUDGET"] = 500.00
 
 with app.app_context():
     init_db()
@@ -159,33 +166,22 @@ def profile():
     if user_id is None:
         return redirect(url_for("login"))
 
-    conn = get_db()
-    try:
-        user = conn.execute(
-            "SELECT id, name, email, created_at FROM users WHERE id = ?",
-            (user_id,),
-        ).fetchone()
+    user = get_user_by_id(user_id)
+    if user is None:
+        session.clear()
+        return redirect(url_for("login"))
 
-        summary = conn.execute(
-            "SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count "
-            "FROM expenses WHERE user_id = ?",
-            (user_id,),
-        ).fetchone()
-
-        recent_expenses = conn.execute(
-            "SELECT amount, category, date, description FROM expenses "
-            "WHERE user_id = ? ORDER BY date DESC, id DESC LIMIT 10",
-            (user_id,),
-        ).fetchall()
-    finally:
-        conn.close()
+    stats = get_summary_stats(user_id)
 
     return render_template(
         "profile.html",
         user=user,
-        total_spent=summary["total"],
-        expense_count=summary["count"],
-        recent_expenses=recent_expenses,
+        budget=app.config["DEFAULT_MONTHLY_BUDGET"],
+        total_spent=stats["total_spent"],
+        expense_count=stats["transaction_count"],
+        top_category=stats["top_category"],
+        recent_expenses=get_recent_transactions(user_id),
+        category_breakdown=get_category_breakdown(user_id),
     )
 
 
