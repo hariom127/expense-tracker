@@ -38,3 +38,8 @@ There is no build step, linter, or bundler configured — plain server-rendered 
 - Keep new pages consistent with the existing template inheritance pattern (`{% extends "base.html" %}`, override `title`/`content` blocks) and route them through `app.py` with `render_template`.
 - Reuse existing CSS custom properties and component classes (e.g. `.btn-primary`, `.btn-ghost`, `.auth-*`, `.legal-*`) before introducing new ones; match the existing kebab-case, section-prefixed naming when new classes are genuinely needed.
 - Since `database/db.py` isn't implemented, any feature needing persistence should build out `get_db()`/`init_db()`/`seed_db()` there first rather than improvising ad hoc SQLite handling elsewhere.
+
+## Testing
+
+- After implementing any new feature or tutorial step, invoke the `write-test-cases` subagent (`.claude/agents/write-test-cases.md`) to add its pytest coverage. Pass it the feature's spec file in `.claude/specs/` and a summary of what was implemented.
+- That agent writes tests from the spec, not from the implementation — so if it reports failures, treat them as likely bugs in the feature and fix the code, not the tests.
